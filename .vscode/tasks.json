@@ -1,0 +1,37 @@
+﻿{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Automatic Git Sync",
+            "type": "process",
+            "command": "powershell.exe",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}/auto_git_sync.ps1"
+            ],
+            "runOptions": {
+                "runOn": "folderOpen"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "git-sync",
+                "pattern": {
+                    "regexp": "^(.*)$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "Automatic Git Sync Started",
+                    "endsPattern": "SYNC_TASK_NEVER_ENDS"
+                }
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "clear": false
+            }
+        }
+    ]
+}
