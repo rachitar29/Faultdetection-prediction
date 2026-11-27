@@ -1,116 +1,86 @@
 
 $ErrorActionPreference = "Stop"
 
-# Project directory: folder containing this script
-$RepoRoot = $PSScriptRoot
+$ProjectPath = "D:\Rachita\faultdetection&prediction"
+$Branch = "main"
+$QuietSeconds = 8
+$PollSeconds = 3
 
-# Automatically detected branch
-$Branch = (& git -C $RepoRoot branch --show-current).Trim()
+Set-Location -LiteralPath $ProjectPath
 
-if ($LASTEXITCODE -ne 0 -or -not $Branch) {
-    throw "Could not detect Git branch."
-}
+Write-Host "Automatic Git Sync Started" -ForegroundColor Green
+Write-Host "Watching tracked files for changes..."
+Write-Host "New files are NOT uploaded automatically."
+Write-Host "Press Ctrl+C to stop."
 
-# Verify GitHub remote
-$Remote = & git -C $RepoRoot remote get-url origin
-
-if ($LASTEXITCODE -ne 0) {
-    throw "GitHub remote 'origin' is not configured."
-}
-
-Write-Host ""
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host "       GIT AUTO-SYNC STARTED" -ForegroundColor Green
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host "Project : $RepoRoot"
-Write-Host "Branch  : $Branch"
-Write-Host "Remote  : $Remote"
-Write-Host "Checking for changes every 3 seconds."
-Write-Host "Changes are committed after 8 seconds of inactivity."
-Write-Host "Press CTRL+C to stop."
-Write-Host ""
-
-$LastStatus = ""
-$QuietSince = Get-Date
+$LastChange = $null
+$LastSignature = ""
 
 while ($true) {
     try {
-        $StatusLines = @(
-            & git -C $RepoRoot status --porcelain --untracked-files=all
-        )
+        # Only inspect changes to files already tracked by Git.
+        $Changes = @(git status --porcelain --untracked-files=no)
 
         if ($LASTEXITCODE -ne 0) {
-            Write-Host "Could not check Git status." -ForegroundColor Red
-            Start-Sleep -Seconds 5
-            continue
+            throw "Unable to read Git status."
         }
 
-        $CurrentStatus = $StatusLines -join "`n"
+        $Signature = $Changes -join "`n"
 
-        if ($CurrentStatus) {
+        if ($Signature -ne $LastSignature) {
+            $LastSignature = $Signature
+            $LastChange = Get-Date
+        }
 
-            if ($CurrentStatus -ne $LastStatus) {
-                $LastStatus = $CurrentStatus
-                $QuietSince = Get-Date
+        if ($Changes.Count -gt 0 -and $null -ne $LastChange) {
+            $Elapsed = ((Get-Date) - $LastChange).TotalSeconds
 
-                Write-Host "Project changes detected..." -ForegroundColor Yellow
-            }
+            if ($Elapsed -ge $QuietSeconds) {
+                Write-Host "`nChanges detected. Preparing commit..." -ForegroundColor Yellow
 
-            $Elapsed = ((Get-Date) - $QuietSince).TotalSeconds
-
-            if ($Elapsed -ge 8) {
-
-                Write-Host "Preparing automatic commit..." -ForegroundColor Cyan
-
-                & git -C $RepoRoot add -A
+                git add -u
 
                 if ($LASTEXITCODE -ne 0) {
-                    Write-Host "Git staging failed." -ForegroundColor Red
-                    Start-Sleep -Seconds 5
-                    continue
+                    throw "Git staging failed."
                 }
 
-                & git -C $RepoRoot diff --cached --quiet
-                $DiffExit = $LASTEXITCODE
+                git diff --cached --quiet
 
-                if ($DiffExit -eq 1) {
-
+                if ($LASTEXITCODE -eq 1) {
                     $CommitMessage = "Auto-sync: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+                    git commit -m $CommitMessage
 
-                    & git -C $RepoRoot commit -m $CommitMessage
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Git commit failed."
+                    }
 
-                    if ($LASTEXITCODE -eq 0) {
+                    Write-Host "Commit created. Pushing to GitHub..." -ForegroundColor Cyan
 
-                        Write-Host "Commit created successfully." -ForegroundColor Green
+                    git push origin $Branch
 
-                        & git -C $RepoRoot push origin $Branch
-
-                        if ($LASTEXITCODE -eq 0) {
-                            Write-Host "GitHub updated successfully!" -ForegroundColor Green
-                        }
-                        else {
-                            Write-Host "Push failed. The local commit is safe; check your connection or GitHub authentication." -ForegroundColor Red
-                        }
+                    if ($LASTEXITCODE -ne 0) {
+                        Write-Host "Push failed. Run git push origin main manually." -ForegroundColor Red
                     }
                     else {
-                        Write-Host "Commit failed. Check the Git output above." -ForegroundColor Red
+                        Write-Host "Successfully pushed to GitHub." -ForegroundColor Green
                     }
                 }
-                elseif ($DiffExit -ne 0) {
-                    Write-Host "Could not inspect staged changes." -ForegroundColor Red
+                elseif ($LASTEXITCODE -ne 0) {
+                    throw "Unable to check staged changes."
                 }
 
-                $LastStatus = ""
-                $QuietSince = Get-Date
+                $LastChange = $null
+                $LastSignature = ""
             }
         }
-        else {
-            $LastStatus = ""
+        elseif ($Changes.Count -eq 0) {
+            $LastChange = $null
+            $LastSignature = ""
         }
     }
     catch {
-        Write-Host "Auto-sync error: $_" -ForegroundColor Red
+        Write-Host "Sync error: $($_.Exception.Message)" -ForegroundColor Red
     }
 
-    Start-Sleep -Seconds 3
+    Start-Sleep -Seconds $PollSeconds
 }
