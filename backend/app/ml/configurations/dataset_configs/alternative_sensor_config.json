@@ -1,0 +1,71 @@
+
+{
+    "dataset_type": "industrial_alternative_sensors",
+    "min_rows": 10,
+    "required_columns": [
+        "timestamp",
+        "machine_id",
+        "vibration",
+        "pressure",
+        "humidity",
+        "voltage",
+        "current",
+        "machine_failure"
+    ],
+    "sensors": {
+        "vibration": {
+            "enabled": true,
+            "min": 0,
+            "max": 50,
+            "unit": "mm/s"
+        },
+        "pressure": {
+            "enabled": true,
+            "min": 0,
+            "max": 500,
+            "unit": "bar"
+        },
+        "humidity": {
+            "enabled": true,
+            "min": 0,
+            "max": 100,
+            "unit": "%"
+        },
+        "voltage": {
+            "enabled": true,
+            "min": 0,
+            "max": 500,
+            "unit": "V"
+        },
+        "current": {
+            "enabled": true,
+            "min": 0,
+            "max": 200,
+            "unit": "A"
+        }
+    },
+    "categorical_rules": {},
+    "missing_value_policy": {
+        "vibration": "reject",
+        "pressure": "reject",
+        "humidity": "reject",
+        "voltage": "reject",
+        "current": "reject",
+        "timestamp": "reject"
+    },
+    "timestamp": {
+        "column": "timestamp",
+        "required": true
+    },
+    "target": {
+        "column": "machine_failure",
+        "allowed_values": [0, 1]
+    },
+    "identifier_columns": [
+        "machine_id"
+    ],
+    "custom_parameters": {
+        "machine_category": "industrial",
+        "configuration_test": "alternative_sensor_test"
+    }
+}

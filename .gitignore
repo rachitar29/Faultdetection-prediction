@@ -1,0 +1,100 @@
+﻿# Python environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node dependencies
+node_modules/
+frontend/node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+*.log
+
+# ML datasets and private uploads
+backend/ml_data/
+backend/uploads/
+
+# Trained models and binary artifacts
+*.joblib
+*.pkl
+*.pickle
+*.h5
+*.keras
+*.onnx
+*.pt
+*.pth
+
+# ML experiment outputs and registries
+backend/ml_artifacts/
+backend/models/
+backend/reports/
+backend/audit_exports/
+
+# Backups and temporary files
+backend/backups/
+backend/temp_test/
+*.backup
+*.bak
+
+# Audit archives and local review files
+*.zip
+source_audit_file_list.txt
+stage1_dependency_audit.txt
+
+# Local test requests
+nonfinite_test.json
+single_invalid_request.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Internal audit and review documents
+**/*audit*.txt
+**/*inventory*.txt
+**/*review*.txt
+**/*source*.txt
+**/*remaining*.txt
+**/*reference*.txt
+**/*validation*.txt
+**/*integration*.txt
+**/*dependencies*.txt
+
+# Local datasets and generated CSV files
+backend/**/*.csv
+
+# Local test request and response files
+backend/*request*.json
+backend/*response*.json
+backend/*test*.json
+
+# Previous versions and backup files
+*.before*
+*.backup*
+*.validation-backup
+*.empty-backup
+*backup.py
+
+
+# Accidental nested duplicate backend
+/backend/backend/
+
+
+# Accidental nested duplicate backend
+/backend/backend/
+

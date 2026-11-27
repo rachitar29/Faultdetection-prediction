@@ -1,0 +1,95 @@
+
+{
+    "dataset_type": "industrial",
+    "min_rows": 10,
+
+    "required_columns": [
+        "timestamp",
+        "machine_id",
+        "machine_type",
+        "air_temperature",
+        "process_temperature",
+        "rotational_speed",
+        "torque",
+        "tool_wear",
+        "sensor_status",
+        "machine_failure"
+    ],
+
+    "sensors": {
+        "air_temperature": {
+            "enabled": true,
+            "min": 0,
+            "max": 500,
+            "unit": "K"
+        },
+        "process_temperature": {
+            "enabled": true,
+            "min": 0,
+            "max": 500,
+            "unit": "K"
+        },
+        "rotational_speed": {
+            "enabled": true,
+            "min": 0,
+            "max": 10000,
+            "unit": "rpm"
+        },
+        "torque": {
+            "enabled": true,
+            "min": 0,
+            "max": 1000,
+            "unit": "Nm"
+        },
+        "tool_wear": {
+            "enabled": true,
+            "min": 0,
+            "max": 10000,
+            "unit": "minutes"
+        }
+    },
+
+    "categorical_rules": {
+        "machine_type": [
+            "L",
+            "M",
+            "H"
+        ]
+    },
+
+    "missing_value_policy": {
+        "air_temperature": "reject",
+        "process_temperature": "reject",
+        "rotational_speed": "reject",
+        "torque": "warn",
+        "tool_wear": "reject",
+        "machine_type": "reject",
+        "timestamp": "reject",
+        "sensor_status": "warn"
+    },
+
+    "timestamp": {
+        "column": "timestamp",
+        "required": true
+    },
+
+    "sensor_status": {
+        "column": "sensor_status",
+        "allowed_values": [
+            "OK",
+            "WARNING",
+            "ERROR"
+        ],
+        "error_values": [
+            "ERROR"
+        ]
+    },
+
+    "target": {
+        "column": "machine_failure",
+        "allowed_values": [
+            0,
+            1
+        ]
+    }
+}

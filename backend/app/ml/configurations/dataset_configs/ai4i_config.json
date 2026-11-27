@@ -1,0 +1,117 @@
+
+{
+    "dataset_id": "ai4i_2020",
+    "dataset_name": "AI4I 2020 Predictive Maintenance Dataset",
+    "dataset_version": "1.0",
+    "dataset_type": "industrial",
+    "source": "UCI Repository",
+    "task_type": "classification",
+
+    "file_format": "csv",
+    "target_column": "Machine failure",
+    "positive_class": 1,
+    "negative_class": 0,
+
+    "identifier_columns": [
+        "UDI",
+        "Product ID"
+    ],
+
+    "numeric_features": [
+        "Air temperature [K]",
+        "Process temperature [K]",
+        "Rotational speed [rpm]",
+        "Torque [Nm]",
+        "Tool wear [min]"
+    ],
+
+    "categorical_features": [
+        "Type"
+    ],
+
+    "datetime_columns": [],
+
+    "excluded_columns": [
+        "UDI",
+        "Product ID",
+        "TWF",
+        "HDF",
+        "PWF",
+        "OSF",
+        "RNF"
+    ],
+
+    "failure_mode_columns": [
+        "TWF",
+        "HDF",
+        "PWF",
+        "OSF",
+        "RNF"
+    ],
+
+    "sensor_metadata": {
+        "Air temperature [K]": {
+            "sensor_type": "temperature",
+            "unit": "Kelvin"
+        },
+        "Process temperature [K]": {
+            "sensor_type": "temperature",
+            "unit": "Kelvin"
+        },
+        "Rotational speed [rpm]": {
+            "sensor_type": "rotational_speed",
+            "unit": "RPM"
+        },
+        "Torque [Nm]": {
+            "sensor_type": "torque",
+            "unit": "Nm"
+        },
+        "Tool wear [min]": {
+            "sensor_type": "tool_wear",
+            "unit": "minutes"
+        },
+        "Type": {
+            "sensor_type": "machine_category",
+            "unit": null
+        }
+    },
+
+    "fault_types": [
+        "Tool Wear Failure",
+        "Heat Dissipation Failure",
+        "Power Failure",
+        "Overstrain Failure",
+        "Random Failure"
+    ],
+
+    "model_settings": {
+        "classification": true,
+        "regression": false,
+        "anomaly_detection": true,
+        "rul_prediction": false
+    },
+
+    "preprocessing": {
+        "numeric_imputation": "median",
+        "categorical_imputation": "most_frequent",
+        "numeric_scaling": "standard",
+        "categorical_encoding": "one_hot",
+        "test_size": 0.2,
+        "random_state": 42,
+        "stratify": true
+    },
+
+    "evaluation": {
+        "primary_metrics": [
+            "precision",
+            "recall",
+            "f1",
+            "pr_auc"
+        ],
+        "additional_metrics": [
+            "accuracy",
+            "roc_auc",
+            "confusion_matrix"
+        ]
+    }
+}

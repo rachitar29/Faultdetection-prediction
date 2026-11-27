@@ -1,0 +1,270 @@
+
+"""Validate normalized sensor data before ML prediction."""
+
+import numpy as np
+import pandas as pd
+
+
+REQUIRED_FEATURES = [
+    "Air temperature [K]",
+    "Process temperature [K]",
+    "Rotational speed [rpm]",
+    "Torque [Nm]",
+    "Tool wear [min]",
+    "Type",
+]
+
+NUMERIC_FEATURES = [
+    "Air temperature [K]",
+    "Process temperature [K]",
+    "Rotational speed [rpm]",
+    "Torque [Nm]",
+    "Tool wear [min]",
+]
+
+VALID_MACHINE_TYPES = {"L", "M", "H"}
+
+
+def validate_sensor_data(dataframe):
+    """
+    Validate a normalized sensor DataFrame.
+
+    Does not silently remove rows or modify the original data.
+    Returns a validation report and a cleaned copy.
+    """
+
+    if not isinstance(dataframe, pd.DataFrame):
+        raise TypeError("Input must be a pandas DataFrame.")
+
+    report = {
+        "is_valid": False,
+        "status": "FAILED",
+        "total_rows": len(dataframe),
+        "total_columns": len(dataframe.columns),
+        "missing_features": [],
+        "missing_values": {},
+        "invalid_numeric_values": {},
+        "infinite_values": {},
+        "invalid_machine_types": [],
+        "negative_values": {},
+        "duplicate_rows": 0,
+        "warnings": [],
+        "errors": [],
+    }
+
+    if dataframe.empty:
+        report["errors"].append("Dataset is empty.")
+        return {
+            "dataframe": dataframe.copy(),
+            "report": report,
+        }
+
+    missing_features = [
+        feature
+        for feature in REQUIRED_FEATURES
+        if feature not in dataframe.columns
+    ]
+
+    report["missing_features"] = missing_features
+
+    if missing_features:
+        report["errors"].append(
+            "Required sensor features are missing."
+        )
+
+    working_df = dataframe.copy()
+
+    # Check numeric columns without silently discarding bad values.
+    for column in NUMERIC_FEATURES:
+
+        if column not in working_df.columns:
+            continue
+
+        original = working_df[column]
+
+        converted = pd.to_numeric(
+            original,
+            errors="coerce"
+        )
+
+        invalid_mask = original.notna() & converted.isna()
+
+        invalid_count = int(invalid_mask.sum())
+
+        if invalid_count:
+            report["invalid_numeric_values"][column] = (
+                invalid_count
+            )
+
+        working_df[column] = converted
+
+        missing_count = int(
+            working_df[column].isna().sum()
+        )
+
+        if missing_count:
+            report["missing_values"][column] = missing_count
+
+        infinite_count = int(
+            np.isinf(
+                working_df[column].dropna().to_numpy()
+            ).sum()
+        )
+
+        if infinite_count:
+            report["infinite_values"][column] = (
+                infinite_count
+            )
+
+        negative_count = int(
+            (working_df[column] < 0).sum()
+        )
+
+        if negative_count:
+            report["negative_values"][column] = (
+                negative_count
+            )
+
+    # Check categorical machine type.
+    if "Type" in working_df.columns:
+
+        invalid_types = (
+            working_df["Type"]
+            .dropna()
+            .astype(str)
+            .str.strip()
+            .str.upper()
+        )
+
+        invalid_types = sorted(
+            set(invalid_types) - VALID_MACHINE_TYPES
+        )
+
+        report["invalid_machine_types"] = invalid_types
+
+        if invalid_types:
+            report["warnings"].append(
+                "Unexpected machine type values found."
+            )
+
+        missing_type_count = int(
+            working_df["Type"].isna().sum()
+        )
+
+        if missing_type_count:
+            report["missing_values"]["Type"] = (
+                missing_type_count
+            )
+
+    # Check duplicates.
+    report["duplicate_rows"] = int(
+        working_df.duplicated().sum()
+    )
+
+    if report["duplicate_rows"]:
+        report["warnings"].append(
+            "Duplicate rows detected. They have not been removed."
+        )
+
+    # Flag negative sensor values for review.
+    if report["negative_values"]:
+        report["warnings"].append(
+            "Negative sensor readings detected. "
+            "Check units and sensor validity."
+        )
+
+    # Detect completely empty columns.
+    empty_columns = [
+        column
+        for column in working_df.columns
+        if working_df[column].isna().all()
+    ]
+
+    if empty_columns:
+        report["errors"].append(
+            f"Completely empty columns: {empty_columns}"
+        )
+
+    # Critical numeric problems.
+    if report["invalid_numeric_values"]:
+        report["errors"].append(
+            "Some numeric columns contain non-numeric values."
+        )
+
+    if report["infinite_values"]:
+        report["errors"].append(
+            "Infinite sensor values detected."
+        )
+
+    if report["missing_values"]:
+        report["errors"].append(
+            "Missing sensor values detected."
+        )
+
+    report["is_valid"] = len(report["errors"]) == 0
+
+    report["status"] = (
+        "VALID" if report["is_valid"] else "FAILED"
+    )
+
+    return {
+        "dataframe": working_df,
+        "report": report,
+    }
+
+
+def print_validation_report(report):
+    """Print a readable sensor validation report."""
+
+    print("\nSENSOR DATA VALIDATION")
+    print("=" * 55)
+
+    print("Status:", report["status"])
+    print("Rows:", report["total_rows"])
+    print("Columns:", report["total_columns"])
+    print("Duplicate rows:", report["duplicate_rows"])
+
+    print("\nMissing features:")
+    print(report["missing_features"])
+
+    print("\nMissing values:")
+    print(report["missing_values"])
+
+    print("\nInvalid numeric values:")
+    print(report["invalid_numeric_values"])
+
+    print("\nInfinite values:")
+    print(report["infinite_values"])
+
+    print("\nInvalid machine types:")
+    print(report["invalid_machine_types"])
+
+    print("\nWarnings:")
+    for warning in report["warnings"]:
+        print("-", warning)
+
+    print("\nErrors:")
+    for error in report["errors"]:
+        print("-", error)
+
+    print("=" * 55)
+
+
+if __name__ == "__main__":
+    sample = pd.DataFrame({
+        "Air temperature [K]": [298.1, 299.2, 300.1],
+        "Process temperature [K]": [308.5, 309.1, 310.2],
+        "Rotational speed [rpm]": [1500, 1450, 1400],
+        "Torque [Nm]": [40.2, 42.1, 45.0],
+        "Tool wear [min]": [10, 20, 30],
+        "Type": ["M", "L", "H"],
+    })
+
+    result = validate_sensor_data(sample)
+
+    print_validation_report(result["report"])
+
+    if result["report"]["is_valid"]:
+        print("\nSELF-TEST PASSED")
+    else:
+        print("\nSELF-TEST FAILED")
