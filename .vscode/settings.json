@@ -1,5 +1,3 @@
-@'
-{
+﻿{
     "task.allowAutomaticTasks": "on"
 }
-'@ | Set-Content -Path ".vscode\settings.json" -Encoding utf8
