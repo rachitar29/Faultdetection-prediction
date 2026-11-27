@@ -98,3 +98,6 @@ backend/*test*.json
 # Accidental nested duplicate backend
 /backend/backend/
 
+
+# Temporary source backups
+*.pre_*_backup
